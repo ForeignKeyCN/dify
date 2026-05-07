@@ -74,6 +74,7 @@ class ToolProviderType(StrEnum):
     APP = auto()
     DATASET_RETRIEVAL = "dataset-retrieval"
     MCP = auto()
+    WORKFLOW_NODE = "workflow-node"
 
     @classmethod
     def value_of(cls, value: str) -> ToolProviderType:

@@ -386,6 +386,10 @@ class ToolManager:
                 return mcp_tool
             case ToolProviderType.DATASET_RETRIEVAL:
                 raise ToolProviderNotFoundError(f"provider type {provider_type.value} not found")
+            case ToolProviderType.WORKFLOW_NODE:
+                # workflow-node tools are constructed via WorkflowNodeTool.from_node_config()
+                # in core.workflow.nodes.agent.runtime_support, not here.
+                raise ToolProviderNotFoundError(f"provider type {provider_type.value} not found")
             case _:
                 raise ToolProviderNotFoundError(f"provider type {provider_type} not found")
 
@@ -1042,7 +1046,7 @@ class ToolManager:
                     return {"background": "#252525", "content": "\ud83d\ude01"}
             case ToolProviderType.MCP:
                 return cls.generate_mcp_tool_icon_url(tenant_id, provider_id)
-            case ToolProviderType.APP | ToolProviderType.DATASET_RETRIEVAL:
+            case ToolProviderType.APP | ToolProviderType.DATASET_RETRIEVAL | ToolProviderType.WORKFLOW_NODE:
                 raise ValueError(f"provider type {provider_type} not found")
             case _:
                 raise ValueError(f"provider type {provider_type} not found")

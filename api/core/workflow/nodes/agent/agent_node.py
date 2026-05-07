@@ -101,6 +101,7 @@ class AgentNode(Node[AgentNodeData]):
             user_id=dify_ctx.user_id,
             app_id=dify_ctx.app_id,
             invoke_from=dify_ctx.invoke_from,
+            graph_config=dict(self.graph_config),
         )
         parameters_for_log = self._runtime_support.build_parameters(
             agent_parameters=agent_parameters,

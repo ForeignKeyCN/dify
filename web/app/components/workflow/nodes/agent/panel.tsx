@@ -14,6 +14,7 @@ import { MCPToolAvailabilityProvider } from '../_base/components/mcp-tool-availa
 import MemoryConfig from '../_base/components/memory-config'
 import OutputVars, { VarItem } from '../_base/components/output-vars'
 import Split from '../_base/components/split'
+import NodeToolSelector from './components/node-tool-selector'
 import { AgentFeature } from './types'
 import useConfig from './use-config'
 
@@ -21,7 +22,7 @@ const i18nPrefix = 'nodes.agent'
 
 function strategyParamToCredientialForm(param: StrategyParamItem): CredentialFormSchema {
   return {
-    ...param as any,
+    ...param,
     variable: param.name,
     show_on: [],
     type: toType(param.type),
@@ -87,6 +88,20 @@ const AgentPanel: FC<NodePanelProps<AgentNodeType>> = (props) => {
             nodeId={props.id}
           />
         </MCPToolAvailabilityProvider>
+      </Field>
+      <Split />
+      <Field
+        title={t('nodes.agent.nodeTools.label', { ns: 'workflow' })}
+        tooltip={t('nodes.agent.nodeTools.tooltip', { ns: 'workflow' })}
+        className="px-4 py-2"
+      >
+        <NodeToolSelector
+          nodeId={props.id}
+          value={inputs.node_tools || []}
+          onChange={nodeTools => setInputs({ ...inputs, node_tools: nodeTools })}
+          availableNodes={availableNodesWithParent}
+          readOnly={readOnly}
+        />
       </Field>
       <div className="px-4 py-2">
         {isChatMode && currentStrategy?.features?.includes(AgentFeature.HISTORY_MESSAGES) && (

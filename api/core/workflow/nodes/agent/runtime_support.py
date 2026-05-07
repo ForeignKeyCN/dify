@@ -41,6 +41,7 @@ class AgentRuntimeSupport:
         app_id: str,
         invoke_from: Any,
         for_log: bool = False,
+        graph_config: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         agent_parameters_dictionary = {parameter.name: parameter for parameter in agent_parameters}
 
@@ -172,6 +173,17 @@ class AgentRuntimeSupport:
                                 "provider_type": provider_type.value,
                             }
                         )
+                    # Inject workflow node-tools (Phase 1: Knowledge Retrieval)
+                    if node_data.node_tools and graph_config is not None:
+                        tool_value.extend(
+                            self._build_node_tools(
+                                node_tools=node_data.node_tools,
+                                graph_config=graph_config,
+                                tenant_id=tenant_id,
+                                user_id=user_id,
+                                app_id=app_id,
+                            )
+                        )
                     value = tool_value
                 if parameter.type == AgentStrategyParameter.AgentStrategyParameterType.MODEL_SELECTOR:
                     value = cast(dict[str, Any], value)
@@ -203,6 +215,53 @@ class AgentRuntimeSupport:
             result[parameter_name] = value
 
         return result
+
+    def _build_node_tools(
+        self,
+        *,
+        node_tools: Sequence,
+        graph_config: dict[str, Any],
+        tenant_id: str,
+        user_id: str,
+        app_id: str,
+    ) -> list[dict[str, Any]]:
+        """Build serialized tool entries for selected workflow nodes.
+
+        Each entry has the same shape as a regular tool entry so the agent
+        strategy treats them uniformly during LLM function-calling.
+        """
+        from core.tools.workflow_node_tool import WorkflowNodeTool
+
+        nodes_by_id = {n.get("id"): n for n in graph_config.get("nodes", []) if isinstance(n, dict)}
+        results: list[dict[str, Any]] = []
+        for nt in node_tools:
+            if not nt.enabled:
+                continue
+            node = nodes_by_id.get(nt.node_id)
+            if node is None:
+                continue
+            node_data = node.get("data", {}) or {}
+            node_title = node_data.get("title") or nt.node_id
+
+            tool = WorkflowNodeTool.from_node_config(
+                node_id=nt.node_id,
+                node_type=nt.node_type,
+                node_config=node_data,
+                node_title=node_title,
+                custom_description=nt.description or "",
+                tenant_id=tenant_id,
+                user_id=user_id,
+                app_id=app_id,
+            )
+            results.append(
+                {
+                    **tool.entity.model_dump(mode="json"),
+                    "runtime_parameters": {},
+                    "credential_id": None,
+                    "provider_type": ToolProviderType.WORKFLOW_NODE.value,
+                }
+            )
+        return results
 
     def build_credentials(self, *, parameters: dict[str, Any]) -> InvokeCredentials:
         credentials = InvokeCredentials()

@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next'
 import { toType } from '@/app/components/tools/utils/to-form-schema'
 import { isSupportMCP } from '@/utils/plugin-version-feature'
 import { useStore } from '../../store'
+import useWorkflowNodes from '../../store/workflow/use-nodes'
 import { AgentStrategy } from '../_base/components/agent-strategy'
 import Field from '../_base/components/field'
 import { MCPToolAvailabilityProvider } from '../_base/components/mcp-tool-availability'
@@ -48,6 +49,9 @@ const AgentPanel: FC<NodePanelProps<AgentNodeType>> = (props) => {
   const isMCPVersionSupported = isSupportMCP(inputs.meta?.version)
 
   const resetEditor = useStore(s => s.setControlPromptEditorRerenderKey)
+  // Node-tools are invoked directly by the agent (not via the graph engine), so
+  // visibility shouldn't depend on predecessor order — list every node in the workflow.
+  const allWorkflowNodes = useWorkflowNodes()
   return (
     <div className="my-2">
       <Field
@@ -99,7 +103,7 @@ const AgentPanel: FC<NodePanelProps<AgentNodeType>> = (props) => {
           nodeId={props.id}
           value={inputs.node_tools || []}
           onChange={nodeTools => setInputs({ ...inputs, node_tools: nodeTools })}
-          availableNodes={availableNodesWithParent}
+          availableNodes={allWorkflowNodes}
           readOnly={readOnly}
         />
       </Field>

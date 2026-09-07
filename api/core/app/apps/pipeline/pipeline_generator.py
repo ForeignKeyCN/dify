@@ -785,6 +785,7 @@ class PipelineGenerator(BaseAppGenerator):
                 provider=datasource_node_data.get("provider_name"),
                 plugin_id=datasource_node_data.get("plugin_id"),
                 credential_id=datasource_node_data.get("credential_id"),
+                current_user_id=user.id,
             )
             if credentials:
                 datasource_runtime.runtime.credentials = credentials

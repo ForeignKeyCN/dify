@@ -270,6 +270,24 @@ class ToolManager:
                     check_existence=False,
                 )
 
+                # Fail-closed visibility check at runtime.
+                # The UI hides only_me credentials from non-owners via
+                # apply_visibility_filter, but the runtime lookup above resolves
+                # by tenant_id + id / default alone. Without this guard a
+                # workflow that references another member's only_me credential
+                # (or a published-app end-user) would silently execute with
+                # credentials they could never have picked in the UI.
+                from services.credential_permission_service import CredentialPermissionService
+                from models.credential_permission import CredentialType as CredPermType
+
+                CredentialPermissionService.enforce_runtime_access(
+                    credential_id=builtin_provider.id,
+                    credential_type=CredPermType.BUILTIN_TOOL_PROVIDER,
+                    visibility=builtin_provider.visibility,
+                    owner_user_id=builtin_provider.user_id,
+                    current_user_id=user_id,
+                )
+
                 encrypter, cache = create_provider_encrypter(
                     tenant_id=tenant_id,
                     config=[

@@ -198,12 +198,22 @@ class DatasourceProviderService:
         provider: str,
         plugin_id: str,
         credential_id: str | None = None,
+        current_user_id: str | None = None,
     ) -> dict[str, Any]:
         """
         Return decrypted datasource credentials.
 
         If the stored credential is expired or about to expire, this method refreshes
         it through plugin-daemon and persists the refreshed credential before returning.
+
+        ``current_user_id`` is the identity the runtime is acting on behalf of.
+        When provided, a fail-closed visibility check runs after the lookup so a
+        pipeline execution cannot silently use another member's only_me
+        credential — mirrors the UI's ``apply_visibility_filter``. Legacy
+        callers that omit it (background/system paths) skip the check to
+        preserve pre-visibility behavior for pre-existing rows; new writes
+        always populate ``user_id`` so any newly-created only_me row is still
+        protected once its callers thread ``current_user_id`` through.
         """
         with sessionmaker(bind=db.engine).begin() as session:
             if credential_id:
@@ -225,6 +235,17 @@ class DatasourceProviderService:
                 )
             if not datasource_provider:
                 return {}
+            if current_user_id is not None:
+                from models.credential_permission import CredentialType as CredPermType
+                from services.credential_permission_service import CredentialPermissionService
+
+                CredentialPermissionService.enforce_runtime_access(
+                    credential_id=datasource_provider.id,
+                    credential_type=CredPermType.DATASOURCE_PROVIDER,
+                    visibility=datasource_provider.visibility,
+                    owner_user_id=datasource_provider.user_id,
+                    current_user_id=current_user_id,
+                )
             if self._should_refresh_credentials(datasource_provider):
                 current_user = get_current_user()
                 encrypted_credentials, expires_at = self._refresh_datasource_credentials(

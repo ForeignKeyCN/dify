@@ -249,6 +249,7 @@ class DataSourceNotionListApi(Resource):
             credential_id=req_data.credential_id,
             provider="notion_datasource",
             plugin_id="langgenius/notion_datasource",
+            current_user_id=current_user.id,
         )
         if not credential:
             raise NotFound("Credential not found.")
@@ -329,12 +330,14 @@ class DataSourceNotionPreviewApi(Resource):
     @account_initialization_required
     @console_ns.doc(params=query_params_from_model(DataSourceNotionPreviewQuery))
     @console_ns.response(200, "Success", console_ns.models[TextContentResponse.__name__])
+    @with_current_user
     @with_current_tenant_id
     @model_validate(DataSourceNotionPreviewQuery)
     def get(
         self,
         req_data: DataSourceNotionPreviewQuery,
         current_tenant_id: str,
+        current_user: Account,
         page_id: UUID,
         page_type: str,
     ) -> tuple[dict[str, str], int]:
@@ -345,6 +348,7 @@ class DataSourceNotionPreviewApi(Resource):
             credential_id=req_data.credential_id,
             provider="notion_datasource",
             plugin_id="langgenius/notion_datasource",
+            current_user_id=current_user.id,
         )
 
         page_id_str = str(page_id)

@@ -172,6 +172,7 @@ class DatasourceManager:
             provider=provider,
             plugin_id=plugin_id,
             credential_id=credential_id,
+            current_user_id=user_id,
         )
 
         if ds_type == DatasourceProviderType.ONLINE_DOCUMENT:
